@@ -48,6 +48,42 @@
                 </DataTemplate>
             </controls:Pivot.ItemTemplate>
         </controls:Pivot>
+        
+        <Popup x:Name="loadingPopup">
+            <Popup.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceDictionary Source="BetterProgressBar/PerfProgressBar.xaml" />
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </Popup.Resources>
+
+            <StackPanel Background="{StaticResource PhoneBackgroundBrush}" 
+                        Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}">
+
+                <StackPanel x:Name="loadingPanel">
+                    <TextBlock x:Name="popupTitle" Style="{StaticResource PhoneTextExtraLargeStyle}">Loading...</TextBlock>
+                    <ProgressBar x:Name="progress" Style="{StaticResource PerformanceProgressBar}" Margin="0,10"/>
+                </StackPanel>
+
+                <!-- Uni Login part -->
+                <StackPanel x:Name="loginPanel" Visibility="Collapsed">
+                    <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Username</TextBlock>
+                    <TextBox x:Name="usernameTB"/>
+                    <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Password</TextBlock>
+                    <PasswordBox x:Name="passwordTB"/>
+                    <CheckBox x:Name="saveLoginCB" IsChecked="True"><TextBlock>Login speichern</TextBlock></CheckBox>
+                    <Button x:Name="loginBtn" Click="loginBtn_Click"><TextBlock>OK</TextBlock></Button>
+                    <TextBlock TextWrapping="Wrap">
+                        Das Welcome Netz ist nur mit Login verwendbar. 
+                        Wenn du dich nicht einloggen kannst oder willst musst du leider dieses Programm schließen.
+                    </TextBlock>
+                    <TextBlock x:Name="loginMsgTB" TextWrapping="Wrap"/>
+                </StackPanel>
+
+            </StackPanel>
+            
+        </Popup>
     </Grid>
  
     <!--Beispielcode für die Verwendung von ApplicationBar-->

@@ -26,7 +26,7 @@ namespace UniUlmApp
             if (System.Diagnostics.Debugger.IsAttached)
             {
                 // Zähler für die aktuelle Bildrate anzeigen
-                Application.Current.Host.Settings.EnableFrameRateCounter = true;
+                //Application.Current.Host.Settings.EnableFrameRateCounter = true;
 
                 // Bereiche der Anwendung hervorheben, die mit jedem Bild neu gezeichnet werden.
                 //Application.Current.Host.Settings.EnableRedrawRegions = true;
