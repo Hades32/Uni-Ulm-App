@@ -63,6 +63,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="BetterProgressBar\RelativeAnimatingContentControl.cs" />
+    <Compile Include="DateConverters.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

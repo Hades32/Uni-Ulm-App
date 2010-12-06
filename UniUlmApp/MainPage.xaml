@@ -15,6 +15,11 @@
     SupportedOrientations="Portrait"  Orientation="Portrait"
     shell:SystemTray.IsVisible="True"
     Loaded="MainPage_Loaded">
+    
+    <phone:PhoneApplicationPage.Resources>
+        <local:ShortDateConverter x:Key="shortDateConv"/>
+        <local:WeekDayNameConverter x:Key="weekDayConv"/>
+    </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <Grid.Resources>
@@ -31,9 +36,9 @@
             <controls:Pivot.HeaderTemplate>
                 <DataTemplate>
                     <StackPanel Margin="-10,0,0,-20">
-                        <TextBlock Text="{Binding Path=FullDate}" Style="{StaticResource PhoneTextSubtleStyle}" 
+                        <TextBlock Text="{Binding Path=Date,Converter={StaticResource shortDateConv}}" Style="{StaticResource PhoneTextSubtleStyle}" 
                                    FontSize="{StaticResource PhoneFontSizeSmall}" Margin="0,10,0,-10"/>
-                        <TextBlock Text="{Binding DateName}" Style="{StaticResource PhoneTextExtraLargeStyle}" 
+                        <TextBlock Text="{Binding Date,Converter={StaticResource weekDayConv}}" Style="{StaticResource PhoneTextExtraLargeStyle}" 
                                    FontSize="{StaticResource PhoneFontSizeExtraExtraLarge}"/>
                     </StackPanel>
                 </DataTemplate>

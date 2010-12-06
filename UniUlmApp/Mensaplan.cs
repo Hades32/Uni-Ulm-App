@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
-using System.Windows;
 using System.Xml.Linq;
 
 namespace UniUlmApp
@@ -30,6 +29,8 @@ namespace UniUlmApp
             }
         }
 
+        public event Action<Mensaplan> OnError;
+
         private System.IO.Stream cacheStream;
         private bool isLoaded = false;
         private string url;
@@ -37,6 +38,7 @@ namespace UniUlmApp
         public Mensaplan(string url, System.IO.Stream stream)
         {
             this.Loaded += (_) => { };
+            this.OnError += (_) => { };
             this.cacheStream = stream;
             this.HasErrors = false;
             this.url = url;
@@ -69,12 +71,12 @@ namespace UniUlmApp
                 }
                 else
                 {
-                    MessageBox.Show("Es gab ein Problem. Versuch es später nochmal!");
+                    this.OnError(this);
                 }
             }
             catch
             {
-                MessageBox.Show("Es gab ein Problem. Versuch es später nochmal!");
+                this.OnError(this);
             }
         }
 
@@ -106,20 +108,19 @@ namespace UniUlmApp
 
                 foreach (var tag in tage)
                 {
-                    var date = formatDate(tag.Attribute("date").Value);
+                    var date = DateTime.Parse(tag.Attribute("date").Value);
 
                     if (tag.Attribute("open").Value == "1")
                     {
                         this.Tage.Add(new Tag()
                         {
-                            DateName = date,
-                            FullDate = formatDateLong(tag.Attribute("date").Value),
+                            Date = date,
                             Essen = tag.Elements("meal")
                                 .Select(x => new Essen() { Typ = x.Attribute("type").Value, Name = x.Value })
                         });
                     }
                     else
-                        this.Tage.Add(new Tag() { DateName = date, Essen = generateNoEssenList() });
+                        this.Tage.Add(new Tag() { Date = date, Essen = generateNoEssenList() });
                 }
                 this._Loaded(this);
                 this.isLoaded = true;
@@ -134,32 +135,6 @@ namespace UniUlmApp
             {
                 this.HasErrors = true;
             }
-        }
-
-        private static string formatDate(string date)
-        {
-            var heutedate = DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day;
-            var morgendt = DateTime.Now.AddDays(1);
-            var morgendate = morgendt.Year + "-" + morgendt.Month + "-" + morgendt.Day;
-
-            if (date == heutedate)
-                date = "Heute";
-            else if (date == morgendate)
-                date = "Morgen";
-            else
-            {
-                var dt = DateTime.Parse(date);
-                date = dt.ToString("dddd");
-            }
-
-            return date;
-        }
-
-        private static string formatDateLong(string date)
-        {
-            var dt = DateTime.Parse(date);
-
-            return dt.ToShortDateString();
         }
 
         private IEnumerable<Essen> generateNoEssenList()
@@ -177,32 +152,17 @@ namespace UniUlmApp
                 this.PropertyChanged += (_, __) => { };
             }
 
-            private string _Name;
+            private DateTime _Date;
 
-            public string DateName
+            public DateTime Date
             {
-                get { return this._Name; }
+                get { return this._Date; }
                 set
                 {
-                    if (this._Name != value)
+                    if (this._Date != value)
                     {
-                        this._Name = value;
-                        this.PropertyChanged(this, new PropertyChangedEventArgs("DateName"));
-                    }
-                }
-            }
-
-            private string _FullDate;
-
-            public string FullDate
-            {
-                get { return this._FullDate; }
-                set
-                {
-                    if (this._FullDate != value)
-                    {
-                        this._FullDate = value;
-                        this.PropertyChanged(this, new PropertyChangedEventArgs("DateName"));
+                        this._Date = value;
+                        this.PropertyChanged(this, new PropertyChangedEventArgs("Date"));
                     }
                 }
             }
@@ -224,7 +184,7 @@ namespace UniUlmApp
 
             public override string ToString()
             {
-                return this.DateName;
+                return this.Date.ToShortDateString();
             }
         }
 

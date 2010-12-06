@@ -14,6 +14,7 @@ namespace UniUlmApp
         WelcomeWiFi welcome = new WelcomeWiFi();
         static IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
         const string wlanloginFile = "wlanlogin.xml";
+        Mensaplan mensaplan;
 
         // Konstruktor
         public MainPage()
@@ -81,18 +82,25 @@ namespace UniUlmApp
                 var cacheStream = isf.OpenFile(xmlSaveFile, System.IO.FileMode.OpenOrCreate);
                 var mp = new Mensaplan("http://www.uni-ulm.de/mensaplan/mensaplan.xml", cacheStream);
                 mp.Loaded += new Action<Mensaplan>(mensaplan_Loaded);
+                mp.OnError += new Action<Mensaplan>(mp_OnError);
             });
+        }
+
+        void mp_OnError(Mensaplan obj)
+        {
+            MessageBox.Show("Es gab ein Problem. Versuch es später nochmal!");
         }
 
         void mensaplan_Loaded(Mensaplan mp)
         {
             this.DayPivot.ItemsSource = mp.Tage;
-            var heuteItem = mp.Tage.Where(tag => tag.DateName == "Heute").FirstOrDefault();
-            if (heuteItem != null)
+            this.mensaplan = mp;
+            var todayItem = mp.Tage.Where(tag => tag.Date == DateTime.Today).FirstOrDefault();
+            if (todayItem != null)
             {
                 //WP7 bug (?) Header isn't updated for selected item change
                 this.DayPivot.Loaded += (_, __) =>
-                        this.DayPivot.SelectedItem = heuteItem;
+                        this.DayPivot.SelectedItem = todayItem;
             }
 
             if (mp.HasErrors)
