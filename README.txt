@@ -1,0 +1,2 @@
+This is open-source in the sense that you are free to look at this code and of course learn from it and maybe even use some snippets (as long as they are so short that they aren't copyrightable anyway).
+But still all copyright remains mine.

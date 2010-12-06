@@ -26,8 +26,9 @@ namespace UniUlmApp
 
         public void checkConnection()
         {
-            var testurl = "http://www.uni-ulm.de/mensaplan/mensaplan.xml";
+            var testurl = "http://www.uni-ulm.de/mensaplan/mensaplan.xml?nocaching=" + DateTime.Now.Millisecond;
             var wc = new WebClient();
+
             wc.DownloadStringCompleted += new DownloadStringCompletedEventHandler(testUrlDownloadComplete);
             wc.DownloadStringAsync(new Uri(testurl));
         }

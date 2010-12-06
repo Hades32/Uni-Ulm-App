@@ -12,6 +12,8 @@ namespace UniUlmApp
     {
 
         WelcomeWiFi welcome = new WelcomeWiFi();
+        static IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
+        const string wlanloginFile = "wlanlogin.xml";
 
         // Konstruktor
         public MainPage()
@@ -39,7 +41,12 @@ namespace UniUlmApp
 
         void needsLogin()
         {
-            this.Dispatcher.BeginInvoke(() =>
+            if (isf.FileExists(wlanloginFile))
+            {
+                var xml = System.Xml.Linq.XDocument.Load(isf.OpenFile(wlanloginFile, System.IO.FileMode.Open));
+                welcome.login(xml.Root.Attribute("user").Value, xml.Root.Attribute("pass").Value);
+            }
+            else this.Dispatcher.BeginInvoke(() =>
             {
                 this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
                 this.loginPanel.Visibility = System.Windows.Visibility.Visible;
@@ -70,7 +77,6 @@ namespace UniUlmApp
             this.Dispatcher.BeginInvoke(() =>
             {
                 this.loadingPopup.IsOpen = false;
-                var isf = IsolatedStorageFile.GetUserStoreForApplication();
                 var xmlSaveFile = "plan.xml";
                 var cacheStream = isf.OpenFile(xmlSaveFile, System.IO.FileMode.OpenOrCreate);
                 var mp = new Mensaplan("http://www.uni-ulm.de/mensaplan/mensaplan.xml", cacheStream);
@@ -97,6 +103,22 @@ namespace UniUlmApp
             else
             {
                 this.loadingPopup.IsOpen = false;
+
+                //on successfull load save login data
+                if (string.IsNullOrEmpty(this.usernameTB.Text) == false
+                 && string.IsNullOrEmpty(this.passwordTB.Password) == false
+                 && (this.saveLoginCB.IsChecked ?? false))
+                {
+                    var xml = System.Xml.XmlWriter.Create(isf.CreateFile(wlanloginFile));
+                    xml.WriteStartDocument(true);
+                    xml.WriteStartElement("WLAN-Login");
+                    xml.WriteAttributeString("user", this.usernameTB.Text);
+                    xml.WriteAttributeString("pass", this.passwordTB.Password);
+                    xml.WriteEndElement();
+                    xml.WriteEndDocument();
+                    xml.Flush();
+                    xml.Close();
+                }
             }
 
             this.progress.IsIndeterminate = false;
