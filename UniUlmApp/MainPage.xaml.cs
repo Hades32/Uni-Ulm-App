@@ -4,17 +4,22 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Microsoft.Phone.Controls;
 
 namespace UniUlmApp
 {
     public partial class MainPage : PhoneApplicationPage
     {
+        const string wlanloginFile = "wlanlogin.xml";
+        const string cachedMensaplanFile = "plan.xml";
 
         WelcomeWiFi welcome = new WelcomeWiFi();
         static IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
-        const string wlanloginFile = "wlanlogin.xml";
         Mensaplan mensaplan;
+
+        //animations that couldn't be created (because of bindings) in xaml
+        Storyboard openPopupAnimation, closePopupAnimation;
 
         // Konstruktor
         public MainPage()
@@ -25,12 +30,13 @@ namespace UniUlmApp
         // Daten für die ViewModel-Elemente laden
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
-            this.progress.IsIndeterminate = true;
-            this.loadingPopup.IsOpen = true;
+            initializeAnimations();
             // only check for the welcome network when we use WiFi
             if (Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType ==
                 Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
             {
+                this.progress.IsIndeterminate = true;
+                this.loadingPopup.IsOpen = true;
                 welcome.finishedLogin += new Action(hasConnection);
                 welcome.needsLogin += new Action(needsLogin);
                 welcome.loginError += new Action<string>(welcome_loginError);
@@ -77,9 +83,12 @@ namespace UniUlmApp
         {
             this.Dispatcher.BeginInvoke(() =>
             {
-                this.loadingPopup.IsOpen = false;
-                var xmlSaveFile = "plan.xml";
-                var cacheStream = isf.OpenFile(xmlSaveFile, System.IO.FileMode.OpenOrCreate);
+                if (isf.FileExists(cachedMensaplanFile) == false)
+                {
+                    this.progress.IsIndeterminate = true;
+                    this.loadingPopup.IsOpen = true;
+                }
+                var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.OpenOrCreate);
                 var mp = new Mensaplan("http://www.uni-ulm.de/mensaplan/mensaplan.xml", cacheStream);
                 mp.Loaded += new Action<Mensaplan>(mensaplan_Loaded);
                 mp.OnError += new Action<Mensaplan>(mp_OnError);
@@ -111,6 +120,7 @@ namespace UniUlmApp
             else
             {
                 this.loadingPopup.IsOpen = false;
+                this.optionsBtn.IsEnabled = true;
 
                 //on successfull load save login data
                 if (string.IsNullOrEmpty(this.usernameTB.Text) == false
@@ -130,6 +140,87 @@ namespace UniUlmApp
             }
 
             this.progress.IsIndeterminate = false;
+        }
+
+        private void optionsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            this.optionsPopup.IsOpen = true;
+            this.openPopupAnimation.Begin();
+        }
+
+        private void clearWifiLoginBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Gespeicherten WLAN-Login wirklich löschen?", "Wirklich löschen?", MessageBoxButton.OKCancel)
+                == MessageBoxResult.OK)
+            {
+                try
+                {
+                    isf.DeleteFile(wlanloginFile);
+                }
+                catch
+                {
+                    //may happen for various reason, but error handling is not needed here
+                }
+            }
+            this.closePopupAnimation.Begin();
+        }
+
+        private void clearCacheBtn_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Der Mensaplan wird beim nächsten mal neu geladen.");
+            try
+            {
+                isf.DeleteFile(wlanloginFile);
+            }
+            catch
+            {
+                //may happen for various reason, but error handling is not needed here
+            }
+            this.closePopupAnimation.Begin();
+        }
+
+        private void closeOptionsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            this.closePopupAnimation.Begin();
+        }
+
+        protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
+        {
+            base.OnBackKeyPress(e);
+            // enable the back button to close the popup
+            if (this.optionsPopup.IsOpen)
+            {
+                e.Cancel = true;
+                this.closePopupAnimation.Begin();
+            }
+        }
+
+        private void initializeAnimations()
+        {
+            //open animation
+            this.openPopupAnimation = new Storyboard();
+            this.openPopupAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            var openAnim = new DoubleAnimation();
+            this.openPopupAnimation.Children.Add(openAnim);
+            openAnim.From = this.LayoutRoot.ActualWidth;
+            openAnim.To = 0;
+            openAnim.EasingFunction = new QuadraticEase();
+            openAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            Storyboard.SetTarget(openAnim, this.optionsPopup);
+            Storyboard.SetTargetProperty(openAnim, new PropertyPath("HorizontalOffset"));
+
+            //close animation
+            this.closePopupAnimation = new Storyboard();
+            this.closePopupAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            var closeAnim = new DoubleAnimation();
+            this.closePopupAnimation.Children.Add(closeAnim);
+            closeAnim.From = 0;
+            closeAnim.To = this.LayoutRoot.ActualWidth;
+            closeAnim.EasingFunction = new QuadraticEase();
+            closeAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            Storyboard.SetTarget(closeAnim, this.optionsPopup);
+            Storyboard.SetTargetProperty(closeAnim, new PropertyPath("HorizontalOffset"));
+            this.closePopupAnimation.Completed += (_, __) => this.optionsPopup.IsOpen = false;
         }
     }
 

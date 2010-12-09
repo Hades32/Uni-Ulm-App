@@ -18,21 +18,54 @@
     
     <phone:PhoneApplicationPage.Resources>
         <local:ShortDateConverter x:Key="shortDateConv"/>
+        
         <local:WeekDayNameConverter x:Key="weekDayConv"/>
+        
+        <local:DebugConverter x:Key="debugConverter" />
+        
+        <Style x:Key="smallBtnStyle" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border BorderThickness="1" BorderBrush="{StaticResource PhoneForegroundBrush}">
+                            <Grid Background="{StaticResource PhoneBackgroundBrush}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="0,-3,0,0"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <DataTemplate x:Key="EssenTemplate">
+            <StackPanel Margin="0,0,0,17">
+                <TextBlock Text="{Binding Path=Typ}" TextWrapping="Wrap" Margin="12,-6,12,0" Style="{StaticResource PhoneTextSubtleStyle}"/>
+                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PhoneTextLargeStyle}"/>
+            </StackPanel>
+        </DataTemplate>
+        
     </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <Grid.Resources>
-            <local:DebugConverter x:Key="debugConverter" />
-            <DataTemplate x:Key="EssenTemplate">
-                <StackPanel Margin="0,0,0,17">
-                    <TextBlock Text="{Binding Path=Typ}" TextWrapping="Wrap" Margin="12,-6,12,0" Style="{StaticResource PhoneTextSubtleStyle}"/>
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PhoneTextLargeStyle}"/>
-                </StackPanel>
-            </DataTemplate>
-        </Grid.Resources>
         
-        <controls:Pivot Title="Uni Ulm Mensa App" x:Name="DayPivot">
+        <controls:Pivot x:Name="DayPivot">
+            
+            <controls:Pivot.Title>
+                <Grid Height="30">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Style="{StaticResource PhoneTextNormalStyle}">Uni Ulm App</TextBlock>
+                    <Button Grid.Column="1" Margin="0" Padding="0" Style="{StaticResource smallBtnStyle}"
+                            x:Name="optionsBtn" Click="optionsBtn_Click" IsEnabled="False">
+                        <TextBlock Style="{StaticResource PhoneTextNormalStyle}">Optionen</TextBlock>
+                    </Button>
+                </Grid>
+            </controls:Pivot.Title>
+            
             <controls:Pivot.HeaderTemplate>
                 <DataTemplate>
                     <StackPanel Margin="-10,0,0,-20">
@@ -43,6 +76,7 @@
                     </StackPanel>
                 </DataTemplate>
             </controls:Pivot.HeaderTemplate>
+            
             <controls:Pivot.ItemTemplate>
                 <DataTemplate>
                         <controls:PivotItem>
@@ -52,9 +86,10 @@
                         </controls:PivotItem>
                 </DataTemplate>
             </controls:Pivot.ItemTemplate>
+            
         </controls:Pivot>
         
-        <Popup x:Name="loadingPopup">
+        <Popup x:Name="loadingPopup" IsOpen="False">
             <Popup.Resources>
                 <ResourceDictionary>
                     <ResourceDictionary.MergedDictionaries>
@@ -88,6 +123,32 @@
 
             </StackPanel>
             
+        </Popup>
+
+        <Popup x:Name="optionsPopup" IsOpen="False">
+            
+            <StackPanel Background="{StaticResource PhoneSemitransparentBrush}" 
+                        Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
+                        Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}">
+
+                <StackPanel Background="{StaticResource PhoneBackgroundBrush}">
+                    <TextBlock Style="{StaticResource PhoneTextExtraLargeStyle}">Optionen</TextBlock>
+                    
+                    <Button Name="clearWifiLoginBtn" Click="clearWifiLoginBtn_Click">
+                        <TextBlock>WLAN-Logindaten löschen</TextBlock>
+                    </Button>
+
+                    <Button Name="clearCacheBtn" Click="clearCacheBtn_Click">
+                        <TextBlock>Gespeicherten Mensaplan löschen</TextBlock>
+                    </Button>
+
+                    <Button Name="closeOptionsBtn" Margin="40" Click="closeOptionsBtn_Click">
+                        <TextBlock>Abbrechen</TextBlock>
+                    </Button>
+                </StackPanel>
+
+            </StackPanel>
+
         </Popup>
     </Grid>
  
