@@ -10,7 +10,7 @@ namespace UniUlmApp
         public event Action needsLogin;
         public event Action<string> loginError;
 
-        const string loginUrl = "https://welcome.uni-ulm.de/";
+        const string loginUrl = "https://welcome.uni-ulm.de/capo/";
 
         public WelcomeWiFi()
         {
