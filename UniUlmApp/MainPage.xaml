@@ -126,26 +126,27 @@
         </Popup>
 
         <Popup x:Name="optionsPopup" IsOpen="False">
-            
-            <StackPanel Background="{StaticResource PhoneSemitransparentBrush}" 
+
+            <StackPanel Background="{StaticResource PhoneBackgroundBrush}"
                         Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
                         Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}">
 
-                <StackPanel Background="{StaticResource PhoneBackgroundBrush}">
-                    <TextBlock Style="{StaticResource PhoneTextExtraLargeStyle}">Optionen</TextBlock>
+                <TextBlock Style="{StaticResource PhoneTextExtraLargeStyle}">Optionen</TextBlock>
                     
-                    <Button Name="clearWifiLoginBtn" Click="clearWifiLoginBtn_Click">
-                        <TextBlock>WLAN-Logindaten löschen</TextBlock>
-                    </Button>
+                <Button Name="clearWifiLoginBtn" Click="clearWifiLoginBtn_Click">
+                    <TextBlock>WLAN-Logindaten löschen</TextBlock>
+                </Button>
 
-                    <Button Name="clearCacheBtn" Click="clearCacheBtn_Click">
-                        <TextBlock>Gespeicherten Mensaplan löschen</TextBlock>
-                    </Button>
+                <Button Name="clearCacheBtn" Click="clearCacheBtn_Click">
+                    <TextBlock>Gespeicherten Mensaplan löschen</TextBlock>
+                </Button>
 
-                    <Button Name="closeOptionsBtn" Margin="40" Click="closeOptionsBtn_Click">
-                        <TextBlock>Abbrechen</TextBlock>
-                    </Button>
-                </StackPanel>
+                <Button Name="closeOptionsBtn" Margin="40" Click="closeOptionsBtn_Click">
+                    <TextBlock>Abbrechen</TextBlock>
+                </Button>
+
+                <TextBlock Text="Uni Ulm App v1.3" Margin="5,50,5,5"/>
+                <TextBlock Text="Support: wp7@rauscheronline.de" Margin="5"/>
 
             </StackPanel>
 

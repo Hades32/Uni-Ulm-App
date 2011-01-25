@@ -31,19 +31,24 @@ namespace UniUlmApp
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             initializeAnimations();
+            this.progress.IsIndeterminate = true;
+            this.loadingPopup.IsOpen = true;
             // only check for the welcome network when we use WiFi
-            if (Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType ==
-                Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
+            var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
+            if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
+             || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
             {
-                this.progress.IsIndeterminate = true;
-                this.loadingPopup.IsOpen = true;
                 welcome.finishedLogin += new Action(hasConnection);
                 welcome.needsLogin += new Action(needsLogin);
                 welcome.loginError += new Action<string>(welcome_loginError);
                 welcome.checkConnection();
             }
             else
+            {
+                this.progress.IsIndeterminate = false;
+                this.loadingPopup.IsOpen = false;
                 hasConnection();
+            }
         }
 
         void needsLogin()
@@ -170,7 +175,7 @@ namespace UniUlmApp
             MessageBox.Show("Der Mensaplan wird beim nächsten mal neu geladen.");
             try
             {
-                isf.DeleteFile(wlanloginFile);
+                isf.DeleteFile(cachedMensaplanFile);
             }
             catch
             {

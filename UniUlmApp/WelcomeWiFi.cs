@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace UniUlmApp
 {
@@ -12,9 +10,7 @@ namespace UniUlmApp
         public event Action needsLogin;
         public event Action<string> loginError;
 
-        const string loginUrl = "https://welcome.uni-ulm.de/cgi-bin/login";
-        static readonly Regex fieldsReg = new Regex("type=\"hidden\"\\s+name=\"([^\"]+)\"\\s+value=\"([^\"]+)\"", RegexOptions.Multiline);
-        Dictionary<string, string> fields = new Dictionary<string, string>();
+        const string loginUrl = "https://welcome.uni-ulm.de/";
 
         public WelcomeWiFi()
         {
@@ -38,11 +34,7 @@ namespace UniUlmApp
             var req = HttpWebRequest.Create(loginUrl);
             req.Method = "POST";
             req.ContentType = "application/x-www-form-urlencoded";
-            string postData = "user=" + user + "&pass=" + pass;
-            foreach (var item in this.fields)
-            {
-                postData += "&" + item.Key + "=" + item.Value;
-            }
+            string postData = "username=" + user + "&password=" + pass + "&login=start+network+access";
             var postDataBytes = System.Text.UTF8Encoding.UTF8.GetBytes(postData);
             req.BeginGetRequestStream(e1 =>
                 {
@@ -59,7 +51,7 @@ namespace UniUlmApp
                             {
                                 sb.Append(System.Text.UTF8Encoding.UTF8.GetString(buffer, 0, len));
                             }
-                            if (sb.ToString().Contains("http://welcome.uni-ulm.de/logout.html"))
+                            if (sb.ToString().Contains("Network access allowed"))
                             {
                                 this.finishedLogin();
                             }
@@ -85,22 +77,10 @@ namespace UniUlmApp
               type="hidden" name="gateway" value="" /><input
               type="hidden" name="timeout" value="28800" />
                     */
-            var knownContentOfLoginPage = "action=\"https://welcome.uni-ulm.de/cgi-bin/login\"";
+            var knownContentOfLoginPage = "<title>Captive Portal</title>";
             if (e.Result.Contains(knownContentOfLoginPage))
             {
-                foreach (Match match in fieldsReg.Matches(e.Result))
-                {
-                    this.fields.Add(match.Groups[1].Value, match.Groups[2].Value);
-                }
-
-                if (this.fields.ContainsKey("mac") && this.fields.ContainsKey("token"))
-                {
-                    this.needsLogin();
-                }
-                else
-                {
-                    this.loginError("Probleme mit der Wlcome Login Seite... Sorry!");
-                }
+                this.needsLogin();
             }
             else // if we are not on the login page and there was no error, we are probably already logged in
             {

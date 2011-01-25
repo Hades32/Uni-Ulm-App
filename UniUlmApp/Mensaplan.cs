@@ -122,18 +122,32 @@ namespace UniUlmApp
                     else
                         this.Tage.Add(new Tag() { Date = date, Essen = generateNoEssenList() });
                 }
-                this._Loaded(this);
-                this.isLoaded = true;
 
-                if (this.cacheStream != null)
+                if (this.Tage.Count == 0)
+                {
+                    this.Tage.Add(new Tag() { Date = DateTime.Now, Essen = generateNoEssenList() });
+                }
+                else if (this.cacheStream != null)
                 {
                     this.cacheStream.SetLength(0);
                     plan.Save(this.cacheStream);
+                    this.cacheStream.Close();
+                    this.cacheStream = null;
                 }
+
+                this.HasErrors = false;
+                this.isLoaded = true;
+                this._Loaded(this);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
                 this.HasErrors = true;
+                if (isCached)
+                {
+                    this.cacheStream.SetLength(0);
+                    this.loadUrl();
+                }
             }
         }
 
