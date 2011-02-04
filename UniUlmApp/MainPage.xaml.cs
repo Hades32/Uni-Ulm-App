@@ -102,7 +102,13 @@ namespace UniUlmApp
 
         void mp_OnError(Mensaplan obj)
         {
-            MessageBox.Show("Es gab ein Problem. Versuch es später nochmal!");
+            this.showMessage("Es gab ein Problem. Versuch es später nochmal!");
+        }
+
+        private MessageBoxResult showMessage(string msg, string caption = "", MessageBoxButton btn = MessageBoxButton.OK)
+        {
+            var res = MessageBox.Show(msg, caption, btn);
+            return res;
         }
 
         void mensaplan_Loaded(Mensaplan mp)
@@ -155,9 +161,10 @@ namespace UniUlmApp
 
         private void clearWifiLoginBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Gespeicherten WLAN-Login wirklich löschen?", "Wirklich löschen?", MessageBoxButton.OKCancel)
+            if (this.showMessage("Gespeicherten WLAN-Login wirklich löschen?", "Wirklich löschen?", MessageBoxButton.OKCancel)
                 == MessageBoxResult.OK)
             {
+                this.closePopupAnimation.Begin();
                 try
                 {
                     isf.DeleteFile(wlanloginFile);
@@ -167,12 +174,12 @@ namespace UniUlmApp
                     //may happen for various reason, but error handling is not needed here
                 }
             }
-            this.closePopupAnimation.Begin();
         }
 
         private void clearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Der Mensaplan wird beim nächsten mal neu geladen.");
+            if (this.showMessage("Der Mensaplan wird beim nächsten mal neu geladen.") == MessageBoxResult.OK)
+                this.closePopupAnimation.Begin();
             try
             {
                 isf.DeleteFile(cachedMensaplanFile);
@@ -181,7 +188,6 @@ namespace UniUlmApp
             {
                 //may happen for various reason, but error handling is not needed here
             }
-            this.closePopupAnimation.Begin();
         }
 
         private void closeOptionsBtn_Click(object sender, RoutedEventArgs e)
@@ -191,13 +197,13 @@ namespace UniUlmApp
 
         protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
         {
-            base.OnBackKeyPress(e);
             // enable the back button to close the popup
             if (this.optionsPopup.IsOpen)
             {
                 e.Cancel = true;
                 this.closePopupAnimation.Begin();
             }
+            base.OnBackKeyPress(e);
         }
 
         private void initializeAnimations()

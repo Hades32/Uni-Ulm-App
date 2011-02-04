@@ -145,7 +145,7 @@
                     <TextBlock>Abbrechen</TextBlock>
                 </Button>
 
-                <TextBlock Text="Uni Ulm App v1.3" Margin="5,50,5,5"/>
+                <TextBlock Text="Uni Ulm App v1.4" Margin="5,50,5,5"/>
                 <TextBlock Text="Support: wp7@rauscheronline.de" Margin="5"/>
 
             </StackPanel>
