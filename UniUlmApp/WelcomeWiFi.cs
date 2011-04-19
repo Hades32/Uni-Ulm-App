@@ -22,11 +22,12 @@ namespace UniUlmApp
 
         public void checkConnection()
         {
-            var testurl = "http://www.uni-ulm.de/mensaplan/mensaplan.xml?nocaching=" + DateTime.Now.Millisecond;
+            var testCode = DateTime.Now.Millisecond;
+            var testurl = "http://tvprogramm.somee.com/onlinecheck.php?test=" + testCode;
             var wc = new WebClient();
 
             wc.DownloadStringCompleted += new DownloadStringCompletedEventHandler(testUrlDownloadComplete);
-            wc.DownloadStringAsync(new Uri(testurl));
+            wc.DownloadStringAsync(new Uri(testurl), testCode.ToString());
         }
 
         public void login(string user, string pass)
@@ -77,8 +78,7 @@ namespace UniUlmApp
               type="hidden" name="gateway" value="" /><input
               type="hidden" name="timeout" value="28800" />
                     */
-            var knownContentOfLoginPage = "<title>Captive Portal</title>";
-            if (e.Result.Contains(knownContentOfLoginPage))
+            if (e.Result.Contains(e.UserState.ToString()) == false)
             {
                 this.needsLogin();
             }
