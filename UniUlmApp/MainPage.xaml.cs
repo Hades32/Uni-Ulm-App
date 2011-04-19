@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO.IsolatedStorage;
 using System.Linq;
+using System.Net;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -17,6 +18,7 @@ namespace UniUlmApp
         WelcomeWiFi welcome = new WelcomeWiFi();
         static IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
         Mensaplan mensaplan;
+        bool needsUpdate = false;
 
         //animations that couldn't be created (because of bindings) in xaml
         Storyboard openPopupAnimation, closePopupAnimation;
@@ -30,25 +32,65 @@ namespace UniUlmApp
         // Daten für die ViewModel-Elemente laden
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
-            initializeAnimations();
-            this.progress.IsIndeterminate = true;
-            this.loadingPopup.IsOpen = true;
-            // only check for the welcome network when we use WiFi
-            var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
-            if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
-             || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
+            this.needsUpdate = false;
+            if (isf.FileExists(cachedMensaplanFile) == false)
             {
-                welcome.finishedLogin += new Action(hasConnection);
-                welcome.needsLogin += new Action(needsLogin);
-                welcome.loginError += new Action<string>(welcome_loginError);
-                welcome.checkConnection();
+                this.needsUpdate = true;
             }
             else
             {
-                this.progress.IsIndeterminate = false;
-                this.loadingPopup.IsOpen = false;
-                hasConnection();
+                var mp = loadCachedMensaplan();
+                if (mp.isCurrent == false)
+                {
+                    this.needsUpdate = true;
+                }
+                else
+                {
+                    this.mensaplan_Loaded(mp);
+                }
             }
+
+            if (needsUpdate)
+            {
+                this.progress.IsIndeterminate = true;
+                this.loadingPopup.IsOpen = true;
+            }
+
+            initializeAnimations();
+
+            System.Threading.ThreadPool.QueueUserWorkItem((x) =>
+                {
+                    // only check for the welcome network when we use WiFi
+                    var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
+                    if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
+                     || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
+                    {
+                        this.Dispatcher.BeginInvoke(() =>
+                            this.progress.IsIndeterminate = true);
+
+                        welcome.finishedLogin += new Action(hasConnection);
+                        welcome.needsLogin += new Action(needsLogin);
+                        welcome.loginError += new Action<string>(welcome_loginError);
+                        welcome.checkConnection();
+                    }
+                    else if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.None)
+                    {
+                        if (this.needsUpdate)
+                            this.welcome_loginError("No network available");
+                    }
+                    else
+                    {
+                        hasConnection();
+                    }
+                });
+        }
+
+        private static Mensaplan loadCachedMensaplan()
+        {
+            var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.OpenOrCreate);
+            var mp = new Mensaplan(cacheStream);
+            cacheStream.Close();
+            return mp;
         }
 
         void needsLogin()
@@ -77,6 +119,7 @@ namespace UniUlmApp
         {
             this.Dispatcher.BeginInvoke(() =>
             {
+                this.progress.IsIndeterminate = false; ;
                 this.loginPanel.Visibility = System.Windows.Visibility.Visible;
                 this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
                 this.loginMsgTB.Text = msg;
@@ -86,18 +129,37 @@ namespace UniUlmApp
 
         void hasConnection()
         {
-            this.Dispatcher.BeginInvoke(() =>
+            if (this.needsUpdate)
             {
-                if (isf.FileExists(cachedMensaplanFile) == false)
-                {
-                    this.progress.IsIndeterminate = true;
-                    this.loadingPopup.IsOpen = true;
-                }
-                var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.OpenOrCreate);
-                var mp = new Mensaplan("http://www.uni-ulm.de/mensaplan/mensaplan.xml", cacheStream);
-                mp.Loaded += new Action<Mensaplan>(mensaplan_Loaded);
-                mp.OnError += new Action<Mensaplan>(mp_OnError);
-            });
+                var wc = new WebClient();
+                wc.DownloadStringCompleted += new DownloadStringCompletedEventHandler(wc_DownloadStringCompleted);
+                wc.DownloadStringAsync(new Uri("http://www.uni-ulm.de/mensaplan/mensaplan.xml"), wc);
+            }
+            else
+            {
+                this.Dispatcher.BeginInvoke(() =>
+                    {
+                        this.progress.IsIndeterminate = false;
+                        this.loadingPopup.IsOpen = false;
+                    });
+            }
+        }
+
+        void wc_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+        {
+            var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.Create);
+            var buf = System.Text.Encoding.UTF8.GetBytes(e.Result);
+            cacheStream.Write(buf, 0, buf.Length);
+            cacheStream.Flush();
+            cacheStream.Close();
+
+            var mp = loadCachedMensaplan();
+            this.Dispatcher.BeginInvoke(() =>
+                    {
+                        this.progress.IsIndeterminate = false;
+                        this.loadingPopup.IsOpen = false;
+                        this.mensaplan_Loaded(mp);
+                    });
         }
 
         void mp_OnError(Mensaplan obj)
@@ -115,7 +177,24 @@ namespace UniUlmApp
         {
             this.DayPivot.ItemsSource = mp.Tage;
             this.mensaplan = mp;
-            var todayItem = mp.Tage.Where(tag => tag.Date == DateTime.Today).FirstOrDefault();
+
+            DateTime searchday = DateTime.Now;
+            if (searchday.Hour > 14)
+            {
+                searchday = searchday.AddDays(1);
+            }
+            if (searchday.DayOfWeek == DayOfWeek.Saturday)
+            {
+                searchday = searchday.AddDays(2);
+            }
+            else if (searchday.DayOfWeek == DayOfWeek.Sunday)
+            {
+                searchday = searchday.AddDays(1);
+            }
+            Mensaplan.Tag todayItem;
+            todayItem = mp.Tage.Where(tag => tag.Date == searchday.Date).FirstOrDefault();
+
+
             if (todayItem != null)
             {
                 //WP7 bug (?) Header isn't updated for selected item change
@@ -123,7 +202,7 @@ namespace UniUlmApp
                         this.DayPivot.SelectedItem = todayItem;
             }
 
-            if (mp.HasErrors)
+            if (mp.isLoaded == false)
             {
                 this.popupTitle.Text = "Error... :(";
                 this.popupTitle.Foreground = new SolidColorBrush(Colors.Red);
@@ -178,16 +257,15 @@ namespace UniUlmApp
 
         private void clearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (this.showMessage("Der Mensaplan wird beim nächsten mal neu geladen.") == MessageBoxResult.OK)
-                this.closePopupAnimation.Begin();
+            this.closePopupAnimation.Begin();
+            this.progress.IsIndeterminate = true;
             try
             {
                 isf.DeleteFile(cachedMensaplanFile);
             }
-            catch
-            {
-                //may happen for various reason, but error handling is not needed here
-            }
+            catch {/*may happen for various reason, but error handling is not needed here*/}
+            this.needsUpdate = true;
+            this.hasConnection();
         }
 
         private void closeOptionsBtn_Click(object sender, RoutedEventArgs e)
