@@ -44,7 +44,7 @@ namespace UniUlmApp
                 {
                     var date = DateTime.Parse(tag.Attribute("date").Value);
 
-                    if (tag.Attribute("open").Value == "1")
+                    if (tag.Attribute("open").Value == "1" && tag.Elements("meal").Count() > 0)
                     {
                         this.Tage.Add(new Tag()
                         {
