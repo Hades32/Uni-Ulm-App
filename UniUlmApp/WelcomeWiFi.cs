@@ -6,7 +6,7 @@ namespace UniUlmApp
 {
     public class WelcomeWiFi
     {
-        public event Action finishedLogin;
+        public event Action<bool> finishedLogin;
         public event Action needsLogin;
         public event Action<string> loginError;
 
@@ -15,7 +15,7 @@ namespace UniUlmApp
         public WelcomeWiFi()
         {
             // avoid null checks
-            this.finishedLogin += () => { };
+            this.finishedLogin += (_) => { };
             this.needsLogin += () => { };
             this.loginError += (_) => { };
         }
@@ -54,7 +54,7 @@ namespace UniUlmApp
                             }
                             if (sb.ToString().Contains("Network access allowed"))
                             {
-                                this.finishedLogin();
+                                this.finishedLogin(true);
                             }
                             else
                             {
@@ -84,7 +84,7 @@ namespace UniUlmApp
             }
             else // if we are not on the login page and there was no error, we are probably already logged in
             {
-                this.finishedLogin();
+                this.finishedLogin(false);
             }
         }
     }

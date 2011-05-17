@@ -125,7 +125,10 @@
             
         </Popup>
 
-        <Popup x:Name="optionsPopup" IsOpen="False">
+        <Grid x:Name="optionsPopupGrid">
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="optionsPopupTransform" X="1000"/>
+            </Grid.RenderTransform>
 
             <StackPanel Background="{StaticResource PhoneBackgroundBrush}"
                         Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
@@ -145,12 +148,21 @@
                     <TextBlock>Abbrechen</TextBlock>
                 </Button>
 
-                <TextBlock Text="Uni Ulm App v1.5" Margin="5,50,5,5"/>
+                <TextBlock Text="Uni Ulm App v1.6" Margin="5,50,5,5"/>
                 <TextBlock Text="Support: wp7@rauscheronline.de" Margin="5"/>
 
             </StackPanel>
 
-        </Popup>
+        </Grid>
+        
+        <Grid Background="{StaticResource PhoneAccentBrush}" Name="wifiPopupGrid" Height="75" 
+              VerticalAlignment="Top"
+              MouseLeftButtonDown="wifiPopupGrid_MouseLeftButtonDown">
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="wifiPopupTransform" Y="-1000"/>
+            </Grid.RenderTransform>
+            <TextBlock Margin="10" FontWeight="Bold" VerticalAlignment="Top" Text="WLAN Login erfolgreich!"/>
+        </Grid>
     </Grid>
  
     <!--Beispielcode für die Verwendung von ApplicationBar-->

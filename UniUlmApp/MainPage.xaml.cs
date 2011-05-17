@@ -19,9 +19,11 @@ namespace UniUlmApp
         static IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
         Mensaplan mensaplan;
         bool needsUpdate = false;
+        bool optionsPopupOpen = false, wifiPopupOpen = false;
 
         //animations that couldn't be created (because of bindings) in xaml
         Storyboard openPopupAnimation, closePopupAnimation;
+        Storyboard openWifiPopupAnimation, closeWifiPopupAnimation;
 
         // Konstruktor
         public MainPage()
@@ -68,7 +70,7 @@ namespace UniUlmApp
                         this.Dispatcher.BeginInvoke(() =>
                             this.progress.IsIndeterminate = true);
 
-                        welcome.finishedLogin += new Action(hasConnection);
+                        welcome.finishedLogin += new Action<bool>(welcome_finishedLogin);
                         welcome.needsLogin += new Action(needsLogin);
                         welcome.loginError += new Action<string>(welcome_loginError);
                         welcome.checkConnection();
@@ -83,6 +85,26 @@ namespace UniUlmApp
                         hasConnection();
                     }
                 });
+        }
+
+        void welcome_finishedLogin(bool loginNeeded)
+        {
+            if (loginNeeded)
+            {
+                this.Dispatcher.BeginInvoke(() =>
+                        this.openWifiPopupAnimation.Begin());
+                System.Threading.Timer wait = null;
+                wait = new System.Threading.Timer(
+                            (_) =>
+                            {
+                                if (this.wifiPopupOpen)
+                                    this.Dispatcher.BeginInvoke(() =>
+                                        this.closeWifiPopupAnimation.Begin());
+                                wait.Change(TimeSpan.FromDays(1), TimeSpan.FromMilliseconds(-1));
+                            },
+                            null, TimeSpan.FromSeconds(3.5), TimeSpan.FromSeconds(1));
+            }
+            hasConnection();
         }
 
         private static Mensaplan loadCachedMensaplan()
@@ -234,7 +256,7 @@ namespace UniUlmApp
 
         private void optionsBtn_Click(object sender, RoutedEventArgs e)
         {
-            this.optionsPopup.IsOpen = true;
+            this.optionsPopupOpen = true;
             this.openPopupAnimation.Begin();
         }
 
@@ -276,7 +298,7 @@ namespace UniUlmApp
         protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
         {
             // enable the back button to close the popup
-            if (this.optionsPopup.IsOpen)
+            if (this.optionsPopupOpen)
             {
                 e.Cancel = true;
                 this.closePopupAnimation.Begin();
@@ -295,8 +317,9 @@ namespace UniUlmApp
             openAnim.To = 0;
             openAnim.EasingFunction = new QuadraticEase();
             openAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
-            Storyboard.SetTarget(openAnim, this.optionsPopup);
-            Storyboard.SetTargetProperty(openAnim, new PropertyPath("HorizontalOffset"));
+            Storyboard.SetTarget(openAnim, this.optionsPopupTransform);
+            Storyboard.SetTargetProperty(openAnim, new PropertyPath("X"));
+            this.openPopupAnimation.Completed += (_, __) => this.optionsPopupOpen = true;
 
             //close animation
             this.closePopupAnimation = new Storyboard();
@@ -307,9 +330,41 @@ namespace UniUlmApp
             closeAnim.To = this.LayoutRoot.ActualWidth;
             closeAnim.EasingFunction = new QuadraticEase();
             closeAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
-            Storyboard.SetTarget(closeAnim, this.optionsPopup);
-            Storyboard.SetTargetProperty(closeAnim, new PropertyPath("HorizontalOffset"));
-            this.closePopupAnimation.Completed += (_, __) => this.optionsPopup.IsOpen = false;
+            Storyboard.SetTarget(closeAnim, this.optionsPopupTransform);
+            Storyboard.SetTargetProperty(closeAnim, new PropertyPath("X"));
+            this.closePopupAnimation.Completed += (_, __) => this.optionsPopupOpen = false;
+
+
+            //open animation
+            this.openWifiPopupAnimation = new Storyboard();
+            this.openWifiPopupAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            var openWifiAnim = new DoubleAnimation();
+            this.openWifiPopupAnimation.Children.Add(openWifiAnim);
+            openWifiAnim.From = -this.wifiPopupGrid.ActualHeight;
+            openWifiAnim.To = 0;
+            openWifiAnim.EasingFunction = new QuadraticEase();
+            openWifiAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            Storyboard.SetTarget(openWifiAnim, this.wifiPopupTransform);
+            Storyboard.SetTargetProperty(openWifiAnim, new PropertyPath("Y"));
+            this.openWifiPopupAnimation.Completed += (_, __) => this.wifiPopupOpen = true;
+
+            //close animation
+            this.closeWifiPopupAnimation = new Storyboard();
+            this.closeWifiPopupAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            var closeWifiAnim = new DoubleAnimation();
+            this.closeWifiPopupAnimation.Children.Add(closeWifiAnim);
+            closeWifiAnim.From = 0;
+            closeWifiAnim.To = -this.wifiPopupGrid.ActualHeight;
+            closeWifiAnim.EasingFunction = new QuadraticEase();
+            closeWifiAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
+            Storyboard.SetTarget(closeWifiAnim, this.wifiPopupTransform);
+            Storyboard.SetTargetProperty(closeWifiAnim, new PropertyPath("Y"));
+            this.closeWifiPopupAnimation.Completed += (_, __) => this.wifiPopupOpen = false;
+        }
+
+        private void wifiPopupGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            this.closeWifiPopupAnimation.Begin();
         }
     }
 
