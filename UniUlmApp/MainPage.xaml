@@ -48,9 +48,9 @@
         
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="Transparent">
+    <Grid x:Name="LayoutRoot">
         
-        <controls:Pivot x:Name="DayPivot">
+        <controls:Pivot x:Name="DayPivot" Loaded="DayPivot_Loaded" LoadedPivotItem="DayPivot_LoadedPivotItem">
             
             <controls:Pivot.Title>
                 <Grid Height="30">
@@ -99,7 +99,8 @@
             </Popup.Resources>
 
             <StackPanel Background="{StaticResource PhoneBackgroundBrush}" 
-                        Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}">
+                        Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
+                        Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}">
 
                 <StackPanel x:Name="loadingPanel">
                     <TextBlock x:Name="popupTitle" Style="{StaticResource PhoneTextExtraLargeStyle}">Loading...</TextBlock>
@@ -108,31 +109,39 @@
 
                 <!-- Uni Login part -->
                 <StackPanel x:Name="loginPanel" Visibility="Collapsed">
-                    <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Username</TextBlock>
-                    <TextBox x:Name="usernameTB"/>
-                    <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Password</TextBlock>
-                    <PasswordBox x:Name="passwordTB"/>
-                    <CheckBox x:Name="saveLoginCB" IsChecked="True"><TextBlock>Login speichern</TextBlock></CheckBox>
-                    <Button x:Name="loginBtn" Click="loginBtn_Click"><TextBlock>OK</TextBlock></Button>
-                    <TextBlock TextWrapping="Wrap">
+                    <StackPanel Name="loginPanelPart">
+                        <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Username</TextBlock>
+                        <TextBox x:Name="usernameTB"/>
+                        <TextBlock Style="{StaticResource PhoneTextLargeStyle}">Password</TextBlock>
+                        <PasswordBox x:Name="passwordTB"/>
+                        <CheckBox x:Name="saveLoginCB" IsChecked="True">
+                            <TextBlock>Login speichern</TextBlock>
+                        </CheckBox>
+                        <Button x:Name="loginBtn" Click="loginBtn_Click">
+                            <TextBlock>OK</TextBlock>
+                        </Button>
+                        <TextBlock TextWrapping="Wrap">
                         Das Welcome Netz ist nur mit Login verwendbar. 
                         Wenn du dich nicht einloggen kannst oder willst musst du leider dieses Programm schließen.
-                    </TextBlock>
-                    <TextBlock x:Name="loginMsgTB" TextWrapping="Wrap"/>
+                        </TextBlock>
+                    </StackPanel>
+                    <TextBlock x:Name="loginMsgTB" FontSize="22" TextWrapping="Wrap"/>
                 </StackPanel>
 
             </StackPanel>
             
         </Popup>
 
-        <Grid x:Name="optionsPopupGrid">
+        <Grid x:Name="optionsPopupGrid" Background="{StaticResource PhoneBackgroundBrush}">
             <Grid.RenderTransform>
                 <TranslateTransform x:Name="optionsPopupTransform" X="1000"/>
             </Grid.RenderTransform>
 
-            <StackPanel Background="{StaticResource PhoneBackgroundBrush}"
-                        Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
+            <StackPanel Width="{Binding ElementName=LayoutRoot, Path=ActualWidth}"
                         Height="{Binding ElementName=LayoutRoot, Path=ActualHeight}">
+                <StackPanel.Background>
+                    <ImageBrush AlignmentX="Center" AlignmentY="Bottom" ImageSource="/bg.png" Stretch="None"/>
+                </StackPanel.Background>
 
                 <TextBlock Style="{StaticResource PhoneTextExtraLargeStyle}">Optionen</TextBlock>
                     

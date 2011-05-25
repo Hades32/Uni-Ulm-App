@@ -34,6 +34,15 @@ namespace UniUlmApp
         // Daten für die ViewModel-Elemente laden
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
+            //handle loosing events
+            welcome.finishedLogin -= new Action<bool>(welcome_finishedLogin);
+            welcome.needsLogin -= new Action(needsLogin);
+            welcome.loginError -= new Action<string>(welcome_loginError);
+            //see above
+            welcome.finishedLogin += new Action<bool>(welcome_finishedLogin);
+            welcome.needsLogin += new Action(needsLogin);
+            welcome.loginError += new Action<string>(welcome_loginError);
+
             this.needsUpdate = false;
             if (isf.FileExists(cachedMensaplanFile) == false)
             {
@@ -52,39 +61,51 @@ namespace UniUlmApp
                 }
             }
 
-            if (needsUpdate)
+            initializeAnimations();
+
+            checkNetworkAndStartLoginAndDownload();
+        }
+
+        private void checkNetworkAndStartLoginAndDownload()
+        {
+            if (this.needsUpdate)
             {
                 this.progress.IsIndeterminate = true;
                 this.loadingPopup.IsOpen = true;
             }
 
-            initializeAnimations();
-
             System.Threading.ThreadPool.QueueUserWorkItem((x) =>
+            {
+                // only check for the welcome network when we use WiFi
+                var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
+                if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
+                 || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
                 {
-                    // only check for the welcome network when we use WiFi
-                    var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
-                    if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
-                     || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
+                    this.Dispatcher.BeginInvoke(() =>
+                        this.progress.IsIndeterminate = true);
+
+                    welcome.checkConnection();
+                }
+                else if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.None)
+                {
+                    if (this.needsUpdate)
                     {
                         this.Dispatcher.BeginInvoke(() =>
-                            this.progress.IsIndeterminate = true);
-
-                        welcome.finishedLogin += new Action<bool>(welcome_finishedLogin);
-                        welcome.needsLogin += new Action(needsLogin);
-                        welcome.loginError += new Action<string>(welcome_loginError);
-                        welcome.checkConnection();
+                        {
+                            this.progress.IsIndeterminate = false; ;
+                            this.loginPanel.Visibility = System.Windows.Visibility.Visible;
+                            this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
+                            this.loginPanelPart.Visibility = System.Windows.Visibility.Collapsed;
+                            this.loginMsgTB.Text = "Kein Netzwerk verfügbar!";
+                            this.loginMsgTB.Foreground = new SolidColorBrush(Colors.Red);
+                        });
                     }
-                    else if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.None)
-                    {
-                        if (this.needsUpdate)
-                            this.welcome_loginError("No network available");
-                    }
-                    else
-                    {
-                        hasConnection();
-                    }
-                });
+                }
+                else
+                {
+                    hasConnection();
+                }
+            });
         }
 
         void welcome_finishedLogin(bool loginNeeded)
@@ -93,16 +114,22 @@ namespace UniUlmApp
             {
                 this.Dispatcher.BeginInvoke(() =>
                         this.openWifiPopupAnimation.Begin());
-                System.Threading.Timer wait = null;
-                wait = new System.Threading.Timer(
-                            (_) =>
-                            {
-                                if (this.wifiPopupOpen)
-                                    this.Dispatcher.BeginInvoke(() =>
-                                        this.closeWifiPopupAnimation.Begin());
-                                wait.Change(TimeSpan.FromDays(1), TimeSpan.FromMilliseconds(-1));
-                            },
-                            null, TimeSpan.FromSeconds(3.5), TimeSpan.FromSeconds(1));
+
+                //on successfull load save login data
+                if (string.IsNullOrEmpty(this.usernameTB.Text) == false
+                 && string.IsNullOrEmpty(this.passwordTB.Password) == false
+                 && (this.saveLoginCB.IsChecked ?? false) == true)
+                {
+                    var xml = System.Xml.XmlWriter.Create(isf.CreateFile(wlanloginFile));
+                    xml.WriteStartDocument(true);
+                    xml.WriteStartElement("WLAN-Login");
+                    xml.WriteAttributeString("user", this.usernameTB.Text);
+                    xml.WriteAttributeString("pass", this.passwordTB.Password);
+                    xml.WriteEndElement();
+                    xml.WriteEndDocument();
+                    xml.Flush();
+                    xml.Close();
+                }
             }
             hasConnection();
         }
@@ -119,11 +146,14 @@ namespace UniUlmApp
         {
             if (isf.FileExists(wlanloginFile))
             {
-                var xml = System.Xml.Linq.XDocument.Load(isf.OpenFile(wlanloginFile, System.IO.FileMode.Open));
+                var file = isf.OpenFile(wlanloginFile, System.IO.FileMode.Open);
+                var xml = System.Xml.Linq.XDocument.Load(file);
+                file.Close();
                 welcome.login(xml.Root.Attribute("user").Value, xml.Root.Attribute("pass").Value);
             }
             else this.Dispatcher.BeginInvoke(() =>
             {
+                this.loadingPopup.IsOpen = true;
                 this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
                 this.loginPanel.Visibility = System.Windows.Visibility.Visible;
             });
@@ -197,32 +227,8 @@ namespace UniUlmApp
 
         void mensaplan_Loaded(Mensaplan mp)
         {
-            this.DayPivot.ItemsSource = mp.Tage;
             this.mensaplan = mp;
-
-            DateTime searchday = DateTime.Now;
-            if (searchday.Hour > 14)
-            {
-                searchday = searchday.AddDays(1);
-            }
-            if (searchday.DayOfWeek == DayOfWeek.Saturday)
-            {
-                searchday = searchday.AddDays(2);
-            }
-            else if (searchday.DayOfWeek == DayOfWeek.Sunday)
-            {
-                searchday = searchday.AddDays(1);
-            }
-            Mensaplan.Tag todayItem;
-            todayItem = mp.Tage.Where(tag => tag.Date == searchday.Date).FirstOrDefault();
-
-
-            if (todayItem != null)
-            {
-                //WP7 bug (?) Header isn't updated for selected item change
-                this.DayPivot.Loaded += (_, __) =>
-                        this.DayPivot.SelectedItem = todayItem;
-            }
+            this.DayPivot.ItemsSource = mp.Tage;
 
             if (mp.isLoaded == false)
             {
@@ -233,22 +239,7 @@ namespace UniUlmApp
             {
                 this.loadingPopup.IsOpen = false;
                 this.optionsBtn.IsEnabled = true;
-
-                //on successfull load save login data
-                if (string.IsNullOrEmpty(this.usernameTB.Text) == false
-                 && string.IsNullOrEmpty(this.passwordTB.Password) == false
-                 && (this.saveLoginCB.IsChecked ?? false))
-                {
-                    var xml = System.Xml.XmlWriter.Create(isf.CreateFile(wlanloginFile));
-                    xml.WriteStartDocument(true);
-                    xml.WriteStartElement("WLAN-Login");
-                    xml.WriteAttributeString("user", this.usernameTB.Text);
-                    xml.WriteAttributeString("pass", this.passwordTB.Password);
-                    xml.WriteEndElement();
-                    xml.WriteEndDocument();
-                    xml.Flush();
-                    xml.Close();
-                }
+                trySelectCurrentDay();
             }
 
             this.progress.IsIndeterminate = false;
@@ -287,7 +278,7 @@ namespace UniUlmApp
             }
             catch {/*may happen for various reason, but error handling is not needed here*/}
             this.needsUpdate = true;
-            this.hasConnection();
+            this.checkNetworkAndStartLoginAndDownload();
         }
 
         private void closeOptionsBtn_Click(object sender, RoutedEventArgs e)
@@ -346,7 +337,20 @@ namespace UniUlmApp
             openWifiAnim.Duration = new Duration(TimeSpan.FromSeconds(0.25));
             Storyboard.SetTarget(openWifiAnim, this.wifiPopupTransform);
             Storyboard.SetTargetProperty(openWifiAnim, new PropertyPath("Y"));
-            this.openWifiPopupAnimation.Completed += (_, __) => this.wifiPopupOpen = true;
+            this.openWifiPopupAnimation.Completed +=
+                (_, __) =>
+                {
+                    this.wifiPopupOpen = true;
+                    UIHelper.SetTimeout(3500, () =>
+                    {
+                        if (this.wifiPopupOpen)
+                        {
+                            this.wifiPopupOpen = false;
+                            this.Dispatcher.BeginInvoke(() =>
+                                this.closeWifiPopupAnimation.Begin());
+                        }
+                    });
+                };
 
             //close animation
             this.closeWifiPopupAnimation = new Storyboard();
@@ -364,7 +368,52 @@ namespace UniUlmApp
 
         private void wifiPopupGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            this.wifiPopupOpen = false;
             this.closeWifiPopupAnimation.Begin();
+        }
+
+        private void DayPivot_Loaded(object sender, RoutedEventArgs e)
+        {
+            trySelectCurrentDay();
+        }
+
+        private void DayPivot_LoadedPivotItem(object sender, PivotItemEventArgs e)
+        {
+            //trySelectCurrentDay();
+        }
+
+        private void trySelectCurrentDay()
+        {
+            if (this.mensaplan == null)
+                return;
+
+            DateTime searchday = DateTime.Now;
+            if (searchday.Hour > 14)
+            {
+                searchday = searchday.AddDays(1);
+            }
+            if (searchday.DayOfWeek == DayOfWeek.Saturday)
+            {
+                searchday = searchday.AddDays(2);
+            }
+            else if (searchday.DayOfWeek == DayOfWeek.Sunday)
+            {
+                searchday = searchday.AddDays(1);
+            }
+
+            Mensaplan.Tag todayItem = this.mensaplan.Tage.Where(tag => tag.Date == searchday.Date).FirstOrDefault();
+
+            if (todayItem == null)
+                return;
+
+            try
+            {
+                this.DayPivot.SelectedItem = todayItem;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Why does this crash?");
+            }
         }
     }
 
