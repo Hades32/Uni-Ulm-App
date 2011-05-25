@@ -21,6 +21,9 @@ namespace UniUlmApp
         bool needsUpdate = false;
         bool optionsPopupOpen = false, wifiPopupOpen = false;
 
+        string user = null, pass = null;
+        bool saveLogin = false;
+
         //animations that couldn't be created (because of bindings) in xaml
         Storyboard openPopupAnimation, closePopupAnimation;
         Storyboard openWifiPopupAnimation, closeWifiPopupAnimation;
@@ -116,15 +119,15 @@ namespace UniUlmApp
                         this.openWifiPopupAnimation.Begin());
 
                 //on successfull load save login data
-                if (string.IsNullOrEmpty(this.usernameTB.Text) == false
-                 && string.IsNullOrEmpty(this.passwordTB.Password) == false
-                 && (this.saveLoginCB.IsChecked ?? false) == true)
+                if (string.IsNullOrEmpty(this.user) == false
+                 && string.IsNullOrEmpty(this.pass) == false
+                 && this.saveLogin == true)
                 {
                     var xml = System.Xml.XmlWriter.Create(isf.CreateFile(wlanloginFile));
                     xml.WriteStartDocument(true);
                     xml.WriteStartElement("WLAN-Login");
-                    xml.WriteAttributeString("user", this.usernameTB.Text);
-                    xml.WriteAttributeString("pass", this.passwordTB.Password);
+                    xml.WriteAttributeString("user", this.user);
+                    xml.WriteAttributeString("pass", this.pass);
                     xml.WriteEndElement();
                     xml.WriteEndDocument();
                     xml.Flush();
@@ -147,11 +150,24 @@ namespace UniUlmApp
             if (isf.FileExists(wlanloginFile))
             {
                 var file = isf.OpenFile(wlanloginFile, System.IO.FileMode.Open);
-                var xml = System.Xml.Linq.XDocument.Load(file);
-                file.Close();
-                welcome.login(xml.Root.Attribute("user").Value, xml.Root.Attribute("pass").Value);
+                try
+                {
+                    
+                    var xml = System.Xml.Linq.XDocument.Load(file);
+                    file.Close();
+                    this.user = xml.Root.Attribute("user").Value;
+                    this.pass = xml.Root.Attribute("pass").Value;
+                    welcome.login(this.user, this.pass);
+                    return;
+                }
+                catch
+                {
+                    file.Close();
+                    isf.DeleteFile(wlanloginFile);
+                }
             }
-            else this.Dispatcher.BeginInvoke(() =>
+            // did not return - problem with stored login. redo login
+            this.Dispatcher.BeginInvoke(() =>
             {
                 this.loadingPopup.IsOpen = true;
                 this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
@@ -161,10 +177,15 @@ namespace UniUlmApp
 
         private void loginBtn_Click(object sender, RoutedEventArgs e)
         {
-            welcome.login(this.usernameTB.Text, this.passwordTB.Password);
             this.popupTitle.Text = "Logging in";
             this.loginPanel.Visibility = System.Windows.Visibility.Collapsed;
             this.loadingPanel.Visibility = System.Windows.Visibility.Visible;
+
+            this.pass = this.passwordTB.Password;
+            this.user = this.usernameTB.Text;
+            this.saveLogin = this.saveLoginCB.IsChecked ?? false;
+
+            welcome.login(this.usernameTB.Text, this.passwordTB.Password);
         }
 
         void welcome_loginError(string msg)
@@ -406,14 +427,9 @@ namespace UniUlmApp
             if (todayItem == null)
                 return;
 
-            try
-            {
-                this.DayPivot.SelectedItem = todayItem;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Why does this crash?");
-            }
+            // we are already on the UI thread, but the Pivot control is very buggy...
+            this.Dispatcher.BeginInvoke(() =>
+                this.DayPivot.SelectedItem = todayItem);
         }
     }
 
