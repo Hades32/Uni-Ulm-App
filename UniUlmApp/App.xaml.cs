@@ -86,6 +86,11 @@ namespace UniUlmApp
                 // Eine nicht behandelte Ausnahme ist aufgetreten. Unterbrechen und Debugger öffnen
                 System.Diagnostics.Debugger.Break();
             }
+            else
+            {
+                MessageBox.Show("Sorry, we didn't expect this :(\nApplication will now close.\n" 
+                    + e.ExceptionObject.ToString());
+            }
         }
 
         #region Initialisierung der Phone-Anwendung
