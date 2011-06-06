@@ -10,7 +10,7 @@ namespace UniUlmApp
     {
         public IList<Tag> Tage { get; private set; }
         public bool isLoaded { get; private set; }
-        public string CalendarWeek { get; private set; }
+        public List<string> CalendarWeeks { get; private set; }
 
         public bool isCurrent
         {
@@ -18,11 +18,16 @@ namespace UniUlmApp
             {
                 // It's a German Mensaplan :)
                 var culture = new System.Globalization.CultureInfo("de-de");
+                var day = DateTime.Now;
+                if (day.DayOfWeek == DayOfWeek.Saturday)
+                    day = day.AddDays(2);
+                if (day.DayOfWeek == DayOfWeek.Sunday)
+                    day = day.AddDays(1);
                 var curweek = culture.Calendar.GetWeekOfYear(
-                                    DateTime.Now,
+                                    day,
                                     culture.DateTimeFormat.CalendarWeekRule,
                                     culture.DateTimeFormat.FirstDayOfWeek);
-                return this.CalendarWeek == curweek.ToString();
+                return this.CalendarWeeks.Contains(curweek.ToString());
             }
         }
 
@@ -37,7 +42,8 @@ namespace UniUlmApp
             try
             {
                 var plan = XDocument.Load(xmlstream);
-                this.CalendarWeek = plan.Root.Element("week").Attribute("weekOfYear").Value;
+                this.CalendarWeeks = (from week in plan.Root.Elements("week")
+                                      select week.Attribute("weekOfYear").Value).ToList();
                 var tage = plan.Root.Elements("week").Elements("day");
 
                 foreach (var tag in tage)

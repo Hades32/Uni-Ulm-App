@@ -95,12 +95,14 @@ namespace UniUlmApp
                     {
                         this.Dispatcher.BeginInvoke(() =>
                         {
-                            this.progress.IsIndeterminate = false; ;
+                            this.progress.IsIndeterminate = false;
                             this.loginPanel.Visibility = System.Windows.Visibility.Visible;
                             this.loadingPanel.Visibility = System.Windows.Visibility.Collapsed;
                             this.loginPanelPart.Visibility = System.Windows.Visibility.Collapsed;
-                            this.loginMsgTB.Text = "Kein Netzwerk verfügbar!";
+                            this.loginMsgTB.Text = "Kein Netzwerk verfügbar! Ohne eine Netzwerkverbindung kann kein Mensaplan heruntergeladen werden.";
                             this.loginMsgTB.Foreground = new SolidColorBrush(Colors.Red);
+                            if (this.optionsPopupOpen)
+                                this.closePopupAnimation.Begin();
                         });
                     }
                 }
@@ -152,7 +154,7 @@ namespace UniUlmApp
                 var file = isf.OpenFile(wlanloginFile, System.IO.FileMode.Open);
                 try
                 {
-                    
+
                     var xml = System.Xml.Linq.XDocument.Load(file);
                     file.Close();
                     this.user = xml.Root.Attribute("user").Value;
