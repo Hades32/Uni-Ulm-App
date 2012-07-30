@@ -43,22 +43,30 @@ namespace UniUlmApp
             InitializePhoneApplication();
         }
 
+
+        private string mtiks_key = "cfed1dd036d25ccf99957f438";
         // Code, der beim Starten der Anwendung ausgeführt werden soll (z. B. über "Start")
         // Dieser Code wird beim Reaktivieren der Anwendung nicht ausgeführt
         private void Application_Launching(object sender, LaunchingEventArgs e)
         {
+            com.mtiks.winmobile.mtiks.Instance.Start(mtiks_key, System.Reflection.Assembly.GetExecutingAssembly());
         }
 
         // Code, der ausgeführt werden soll, wenn die Anwendung aktiviert wird (in den Vordergrund gebracht wird)
         // Dieser Code wird beim ersten Starten der Anwendung nicht ausgeführt
         private void Application_Activated(object sender, ActivatedEventArgs e)
         {
+            if (e.IsApplicationInstancePreserved == false)
+            {
+                com.mtiks.winmobile.mtiks.Instance.Start(mtiks_key, System.Reflection.Assembly.GetExecutingAssembly());
+            }
         }
 
         // Code, der ausgeführt werden soll, wenn die Anwendung deaktiviert wird (in den Hintergrund gebracht wird)
         // Dieser Code wird beim Schließen der Anwendung nicht ausgeführt
         private void Application_Deactivated(object sender, DeactivatedEventArgs e)
         {
+            com.mtiks.winmobile.mtiks.Instance.Stop();
         }
 
         // Code, der beim Schließen der Anwendung ausgeführt wird (z. B. wenn der Benutzer auf "Zurück" klickt)
@@ -66,6 +74,7 @@ namespace UniUlmApp
         private void Application_Closing(object sender, ClosingEventArgs e)
         {
             // Sicherstellen, dass der erforderliche Anwendungszustand hier beibehalten wird
+            com.mtiks.winmobile.mtiks.Instance.Stop();
         }
 
         // Code, der bei einem Navigationsfehler ausgeführt wird
@@ -88,8 +97,16 @@ namespace UniUlmApp
             }
             else
             {
-                MessageBox.Show("Sorry, we didn't expect this :(\nApplication will now close.\n" 
-                    + e.ExceptionObject.ToString());
+                if (e.ExceptionObject is ExitAppException)
+                {
+                    return;
+                }
+                else
+                {
+                    Deployment.Current.Dispatcher.BeginInvoke(() =>
+                        MessageBox.Show("Sorry, we didn't expect this :(\nApplication will now close.\n"
+                            + e.ExceptionObject.ToString()));
+                }
             }
         }
 

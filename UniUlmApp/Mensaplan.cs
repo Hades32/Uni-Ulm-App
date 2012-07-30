@@ -10,7 +10,7 @@ namespace UniUlmApp
     {
         public IList<Tag> Tage { get; private set; }
         public bool isLoaded { get; private set; }
-        public List<string> CalendarWeeks { get; private set; }
+        public IEnumerable<string> CalendarWeeks { get; private set; }
 
         public bool isCurrent
         {
@@ -34,6 +34,7 @@ namespace UniUlmApp
         public Mensaplan(System.IO.Stream stream)
         {
             this.Tage = new List<Tag>();
+            this.CalendarWeeks = new string[0];
             this.parseXmlStream(stream);
         }
 
@@ -42,8 +43,8 @@ namespace UniUlmApp
             try
             {
                 var plan = XDocument.Load(xmlstream);
-                this.CalendarWeeks = (from week in plan.Root.Elements("week")
-                                      select week.Attribute("weekOfYear").Value).ToList();
+                this.CalendarWeeks = from week in plan.Root.Elements("week")
+                                     select week.Attribute("weekOfYear").Value;
                 var tage = plan.Root.Elements("week").Elements("day");
 
                 foreach (var tag in tage)

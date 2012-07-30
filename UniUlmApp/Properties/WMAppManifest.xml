@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Deployment xmlns="http://schemas.microsoft.com/windowsphone/2009/deployment" AppPlatformVersion="7.0">
-  <App xmlns="" ProductID="{f7555214-eef4-4228-b232-4f987cb840f4}" Title="Uni Ulm App" RuntimeType="Silverlight" 
-       Version="1.0.0.0" Genre="apps.normal" Author="UniUlmApp author" Description="Sample description" Publisher="UniUlmApp">
+<Deployment xmlns="http://schemas.microsoft.com/windowsphone/2009/deployment" AppPlatformVersion="7.1">
+  <App xmlns="" ProductID="{f7555214-eef4-4228-b232-4f987cb840f4}" Title="Uni Ulm App" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal" Author="UniUlmApp author" Description="Sample description" Publisher="UniUlmApp">
     <IconPath IsRelative="true" IsResource="false">ApplicationIconSmall.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_GAMERSERVICES" />

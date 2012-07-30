@@ -54,7 +54,7 @@ namespace UniUlmApp
             else
             {
                 var mp = loadCachedMensaplan();
-                if (mp.isCurrent == false)
+                if (mp == null || mp.isCurrent == false)
                 {
                     this.needsUpdate = true;
                 }
@@ -141,10 +141,17 @@ namespace UniUlmApp
 
         private static Mensaplan loadCachedMensaplan()
         {
-            var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.OpenOrCreate);
-            var mp = new Mensaplan(cacheStream);
-            cacheStream.Close();
-            return mp;
+            try
+            {
+                var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.OpenOrCreate);
+                var mp = new Mensaplan(cacheStream);
+                cacheStream.Close();
+                return mp;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         void needsLogin()
@@ -222,6 +229,12 @@ namespace UniUlmApp
 
         void wc_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
+            if (e.Error != null)
+            {
+                mp_OnError(null);
+                return;
+            }
+
             var cacheStream = isf.OpenFile(cachedMensaplanFile, System.IO.FileMode.Create);
             var buf = System.Text.Encoding.UTF8.GetBytes(e.Result);
             cacheStream.Write(buf, 0, buf.Length);
@@ -239,7 +252,11 @@ namespace UniUlmApp
 
         void mp_OnError(Mensaplan obj)
         {
-            this.showMessage("Es gab ein Problem. Versuch es später nochmal!");
+            Dispatcher.BeginInvoke(() =>
+                {
+                    this.showMessage("Es gab ein Problem. Versuch es später nochmal!");
+                    throw new ExitAppException();
+                });
         }
 
         private MessageBoxResult showMessage(string msg, string caption = "", MessageBoxButton btn = MessageBoxButton.OK)
