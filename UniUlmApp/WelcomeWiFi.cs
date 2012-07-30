@@ -23,10 +23,10 @@ namespace UniUlmApp
         public void checkConnection()
         {
             var testCode = DateTime.Now.Millisecond;
-            var testurl = "http://tvprogramm.somee.com/onlinecheck.php?test=" + testCode;
+            var testurl = "http://www.google.de/search?q=" + testCode;
             var wc = new WebClient();
 
-            wc.DownloadStringCompleted += new DownloadStringCompletedEventHandler(testUrlDownloadComplete);
+            wc.DownloadStringCompleted += testUrlDownloadComplete;
             wc.DownloadStringAsync(new Uri(testurl), testCode.ToString());
         }
 
@@ -64,7 +64,7 @@ namespace UniUlmApp
                 }, null);
         }
 
-        void testUrlDownloadComplete(object sender, DownloadStringCompletedEventArgs e)
+        private void testUrlDownloadComplete(object sender, DownloadStringCompletedEventArgs e)
         {
             if (e.Error != null)
             {
