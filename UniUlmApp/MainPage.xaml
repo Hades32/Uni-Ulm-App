@@ -124,6 +124,14 @@
                         Das Welcome Netz ist nur mit Login verwendbar. 
                         Wenn du dich nicht einloggen kannst oder willst musst du leider dieses Programm schließen.
                         </TextBlock>
+                        <TextBlock FontWeight="Bold" Foreground="Red">WICHTIG</TextBlock>
+                        <TextBlock MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1">
+                            <Run>Der Log-In funktioniert über eine sichere Webseite der Uni Ulm (welcome.uni-ulm.de). 
+                                Windows Phone 7 kennt leider das passende Zertifikat nicht. Um es zu installieren:
+                            </Run>
+                            <Run TextDecorations="Underline">Hier klicken.</Run>
+                            <Run FontWeight="Bold">Ohne das Zertifikat funktioniert der Log-in NICHT!</Run>
+                        </TextBlock>
                     </StackPanel>
                     <TextBlock x:Name="loginMsgTB" FontSize="22" TextWrapping="Wrap"/>
                 </StackPanel>
@@ -153,11 +161,15 @@
                     <TextBlock>Gespeicherten Mensaplan löschen</TextBlock>
                 </Button>
 
-                <Button Name="closeOptionsBtn" Margin="40" Click="closeOptionsBtn_Click">
-                    <TextBlock>Abbrechen</TextBlock>
-                </Button>
+                <TextBlock FontWeight="Bold" Foreground="Red" Margin="12,8,12,0">WICHTIG</TextBlock>
+                <TextBlock MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" TextWrapping="Wrap" Margin="12,0">
+                            <Run>Der Log-In funktioniert über eine sichere Webseite der Uni Ulm (welcome.uni-ulm.de). 
+                                Windows Phone 7 kennt leider das passende Zertifikat nicht. Um es zu installieren: 
+                            </Run><Run TextDecorations="Underline">Hier klicken.</Run><LineBreak/>
+                            <Run FontWeight="Bold">Ohne das Zertifikat funktioniert der Log-in NICHT!</Run>
+                </TextBlock>
 
-                <TextBlock Text="Uni Ulm App v2.0" Margin="5,50,5,5"/>
+                <TextBlock Text="Uni Ulm App v2.3" Margin="5,50,5,5"/>
                 <TextBlock Text="Support: wp7@rauscheronline.de" Margin="5"/>
 
             </StackPanel>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Text;
+using Microsoft.Phone.Net.NetworkInformation;
 
 namespace UniUlmApp
 {
@@ -20,6 +21,23 @@ namespace UniUlmApp
             this.loginError += (_) => { };
         }
 
+        public bool IsWelcomeWifi()
+        {
+            foreach (var nif in new NetworkInterfaceList())
+            {
+                if (nif.InterfaceType == NetworkInterfaceType.Wireless80211
+                 && nif.InterfaceName.ToLower() == "welcome")
+                {
+                    return true;
+                }
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public void checkConnection()
         {
             var testCode = DateTime.Now.Millisecond;
@@ -33,6 +51,7 @@ namespace UniUlmApp
         public void login(string user, string pass)
         {
             var req = HttpWebRequest.Create(loginUrl);
+            req.SetNetworkRequirement(Microsoft.Phone.Net.NetworkInformation.NetworkSelectionCharacteristics.NonCellular);
             req.Method = "POST";
             req.ContentType = "application/x-www-form-urlencoded";
             string postData = "username=" + user + "&password=" + pass + "&login=start+network+access";
@@ -44,7 +63,8 @@ namespace UniUlmApp
                     stream.Close();
                     req.BeginGetResponse(e2 =>
                         {
-                            var respStream = req.EndGetResponse(e2).GetResponseStream();
+                            var resp = req.EndGetResponse(e2);
+                            var respStream = resp.GetResponseStream();
                             var buffer = new byte[512];
                             var sb = new StringBuilder();
                             int len = 0;

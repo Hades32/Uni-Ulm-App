@@ -7,6 +7,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Phone.Controls;
+using Microsoft.Phone.Net.NetworkInformation;
+using Microsoft.Phone.Tasks;
 
 namespace UniUlmApp
 {
@@ -79,17 +81,15 @@ namespace UniUlmApp
 
             System.Threading.ThreadPool.QueueUserWorkItem((x) =>
             {
-                // only check for the welcome network when we use WiFi
-                var network = Microsoft.Phone.Net.NetworkInformation.NetworkInterface.NetworkInterfaceType;
-                if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Wireless80211
-                 || network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
+                // only check for the welcome network when we use the welcome WiFi
+                if (welcome.IsWelcomeWifi())
                 {
                     this.Dispatcher.BeginInvoke(() =>
                         this.progress.IsIndeterminate = true);
 
                     welcome.checkConnection();
                 }
-                else if (network == Microsoft.Phone.Net.NetworkInformation.NetworkInterfaceType.None)
+                else if (NetworkInterface.NetworkInterfaceType == NetworkInterfaceType.None)
                 {
                     if (this.needsUpdate)
                     {
@@ -449,6 +449,17 @@ namespace UniUlmApp
             // we are already on the UI thread, but the Pivot control is very buggy...
             this.Dispatcher.BeginInvoke(() =>
                 this.DayPivot.SelectedItem = todayItem);
+        }
+
+        private void TextBlock_MouseLeftButtonDown_1(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                new WebBrowserTask() { URL = "http://www.telesec.de/downloads/DT-Root-CA-2.cer" }.Show();
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 
